@@ -13,6 +13,10 @@ export default function Modal({
   onClose,
 }: Props): JSX.Element | null {
   useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    }
+
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
@@ -25,6 +29,7 @@ export default function Modal({
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 

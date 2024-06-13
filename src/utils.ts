@@ -1,5 +1,13 @@
 import { Event } from "./types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function convertJsonToObjEvent(jsonEvents: any[]) {
+  return jsonEvents.map((json) => ({
+    ...json,
+    date: new Date(json.date),
+  }));
+}
+
 export function range(end: number) {
   const { result } = Array.from({ length: end }).reduce(
     ({ result, current }) => ({
@@ -83,4 +91,28 @@ export function getIncommingEvents(events: Event[]) {
   });
 
   return sortedEvents.slice(index);
+}
+
+export function createTimeOptions() {
+  let result: string[] = [];
+  for (let i = 0; i < 24; i++) {
+    for (let j = 0; j < 60; j = j + 15) {
+      result = [...result, `0${i}`.slice(-2) + ":" + `0${j}`.slice(-2)];
+    }
+  }
+
+  return result;
+}
+
+export const timeOptions = createTimeOptions();
+
+export function filterFromTimeOptions(toTime: string) {
+  const index = timeOptions.findIndex((option) => option === toTime);
+  return timeOptions.slice(0, index - timeOptions.length);
+}
+
+export function filterToTimeOptions(fromTime: string) {
+  const index = timeOptions.findIndex((option) => option === fromTime);
+
+  return timeOptions.slice(index + 1);
 }

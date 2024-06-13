@@ -3,100 +3,38 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { MdImportantDevices } from "react-icons/md";
 import { CiCalendar, CiClock2, CiLocationOn } from "react-icons/ci";
 import { useForm } from "react-hook-form";
-import { DAYS } from "../contants";
+import { DAYS, STORAGE_KEY } from "../contants";
 import {
+  convertJsonToObjEvent,
   datesAreOnSameDay,
+  filterFromTimeOptions,
+  filterToTimeOptions,
   getIncommingEvents,
   getMonthYear,
   getSortedDaysInMonth,
   nextMonth,
   prevMonth,
   sortEventsByDate,
+  timeOptions,
 } from "../utils";
 import Modal from "./Modal";
 import { Event } from "../types";
 import EventCard from "./EventCard";
+import { toast } from "react-toastify";
 
 type EventInputs = {
   title: string;
+  from: string;
+  to: string;
   priority: "low" | "medium" | "high";
   location: string;
 };
 
-const EVENTS: Event[] = [
-  {
-    title: "Event 1",
-    date: new Date("2024-06-30"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Gia Lai",
-    priority: "low",
-  },
-  {
-    title:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-    date: new Date("2024-06-23"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Gia Lai",
-    priority: "medium",
-  },
-  {
-    title: "Event 2",
-    date: new Date("2024-06-11"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Da Nang",
-    priority: "high",
-  },
-  {
-    title: "Event 4",
-    date: new Date("2024-06-11"),
-    startTime: "12:00",
-    endTime: "12:30",
-    priority: "medium",
-  },
-  {
-    title: "Event 5",
-    date: new Date("2024-06-11"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Da Nang",
-    priority: "low",
-  },
-  {
-    title: "Event 0",
-    date: new Date("2024-06-1"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Da Nang",
-    priority: "low",
-  },
-  {
-    title: "Event 6",
-    date: new Date("2024-06-11"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Da Nang",
-    priority: "low",
-  },
-  {
-    title: "Event 7",
-    date: new Date("2024-06-19"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Da Nang",
-    priority: "low",
-  },
-  {
-    title: "Event 8",
-    date: new Date("2024-06-17"),
-    startTime: "12:00",
-    endTime: "12:30",
-    location: "Da Nang",
-    priority: "low",
-  },
-];
+const eventsString = localStorage.getItem(STORAGE_KEY.EVENTS) || [];
+const EVENTS =
+  typeof eventsString === "string"
+    ? convertJsonToObjEvent(JSON.parse(eventsString))
+    : [];
 
 function Calendar(): JSX.Element {
   const today = new Date();
@@ -108,6 +46,8 @@ function Calendar(): JSX.Element {
   const [isShowEventDetailModal, setIsShowEventDetailModal] =
     useState<boolean>(false);
   const [currentEvent, setCurrentEvent] = useState<Event>();
+  const [fromTimeOptions, setFromTimeOptions] = useState<string[]>(timeOptions);
+  const [toTimeOptions, setToTimeOptions] = useState<string[]>(timeOptions);
 
   const daysInMonth = getSortedDaysInMonth(currentDate);
   const incommingEvents = getIncommingEvents(events);
@@ -130,19 +70,23 @@ function Calendar(): JSX.Element {
   }
 
   function handleAddEvent(data: EventInputs) {
-    setEvents((prevState) => [
-      ...prevState,
+    const newEvents = [
+      ...events,
       {
         title: data.title,
         date: currentDate,
-        startTime: "12:00",
-        endTime: "12:30",
+        startTime: data.from,
+        endTime: data.to,
         priority: data.priority,
         location: data?.location,
       },
-    ]);
+    ];
+
+    setEvents(newEvents);
+    localStorage.setItem(STORAGE_KEY.EVENTS, JSON.stringify(newEvents));
 
     setIsShowAddEventModal(false);
+    toast.success("Add event successfully!!!");
   }
 
   function handleEventClick(event: Event) {
@@ -287,7 +231,7 @@ function Calendar(): JSX.Element {
           <input
             type="text"
             className="border-t-none border-l-none border-r-none focus:border-light-blue mb-4 border-b-2 text-xl font-medium outline-none md:min-w-80"
-            placeholder="Add title"
+            placeholder="Add title *"
             {...register("title", { required: true })}
           />
           {errors.title && (
@@ -296,7 +240,7 @@ function Calendar(): JSX.Element {
 
           <div className="mb-4 flex items-center gap-2">
             <CiClock2 />
-            <span>
+            <span className="mr-4">
               {currentDate.toLocaleString("default", {
                 weekday: "long",
                 month: "long",
@@ -304,6 +248,36 @@ function Calendar(): JSX.Element {
                 day: "2-digit",
               })}
             </span>
+
+            <select
+              {...register("from", {
+                required: true,
+                onChange: (e) => {
+                  setToTimeOptions(filterToTimeOptions(e.target.value));
+                },
+              })}
+            >
+              {fromTimeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+
+            <select
+              {...register("to", {
+                required: true,
+                onChange: (e) => {
+                  setFromTimeOptions(filterFromTimeOptions(e.target.value));
+                },
+              })}
+            >
+              {toTimeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
 
           <input
